@@ -1,11 +1,12 @@
 /**
  * ezplm-agents 的唯一对外契约。
  *
- * 五个 Agent 的输出全部收敛到 Suggestion 上，宿主 UI 只需要认识这一个结构。
- * 新增 Agent 不允许新增出口类型 —— 否则前端会长出五套互不相通的渲染逻辑。
+ * Agent 的写入型输出全部收敛到 Suggestion 上，宿主 UI 只需要认识这一个结构。
+ * A6 LabSight 额外提供只读/诊断型 runtime response，但任何 Issue/ECO/项目字段写入
+ * 仍必须转换为 Suggestion 并经过人工确认。
  */
 
-export type AgentId = 'A1' | 'A2' | 'A3' | 'A4' | 'A5';
+export type AgentId = 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'A6';
 
 /** 置信度直接决定交互形态，见 confidenceToInteraction()。 */
 export type Confidence = 'high' | 'medium' | 'low';
@@ -38,19 +39,26 @@ export const PRICE_SOURCE_RANK: Record<PriceSource, number> = {
 };
 
 export type EvidenceKind =
-  | 'field'      // 某个对象的某个字段
-  | 'row'        // BOM 的某一行
-  | 'dict'       // 工程文件导入映射字典的某条记录
-  | 'library'    // 系统库/云端元件库
-  | 'doc'        // 数据手册
-  | 'rule'       // 规则本身（仅用于纯逻辑推导）
-  | 'mpn'        // 型号解码结果
-  | 'inventory'  // 库存/在途
-  | 'po';        // 历史采购单
+  | 'field'       // 某个对象的某个字段
+  | 'row'         // BOM 的某一行
+  | 'dict'        // 工程文件导入映射字典的某条记录
+  | 'library'     // 系统库/云端元件库
+  | 'doc'         // 数据手册
+  | 'rule'        // 规则本身（仅用于纯逻辑推导）
+  | 'mpn'         // 型号解码结果
+  | 'inventory'   // 库存/在途
+  | 'po'          // 历史采购单
+  | 'image'       // LabSight 摄像头/PCB 照片
+  | 'measurement' // DMM/PSU/示波器等结构化测量值
+  | 'waveform'    // 原始/派生波形证据
+  | 'kicad'       // KiCad 原理图/PCB/网表/footprint 定位
+  | 'voice'       // 声网/语音会话中确认的工程事实
+  | 'session'     // DebugSession / Evidence Timeline 事件
+  | 'instrument'; // 仪器配置/量程/探头倍率等元数据
 
 export interface Evidence {
   kind: EvidenceKind;
-  /** 稳定可跳转的定位串，例如 bomLine:<ID>/row:37/field:规格描述 */
+  /** 稳定可跳转的定位串，例如 bomLine:<ID>/row:37/field:规格描述 或 photo:<ID>/ref:U3 */
   ref: string;
   /** 原文片段，UI 悬浮展示。禁止在这里做二次加工。 */
   excerpt?: string;
@@ -58,16 +66,18 @@ export interface Evidence {
 }
 
 export type ObjectType =
-  | 'bom' | 'bomLine' | 'part' | 'package' | 'attribute' | 'dictEntry' | 'requisition';
+  | 'bom' | 'bomLine' | 'part' | 'package' | 'attribute' | 'dictEntry' | 'requisition'
+  | 'project' | 'revision' | 'board' | 'debugSession' | 'measurement' | 'test'
+  | 'issue' | 'eco';
 
 export interface SuggestionTarget {
   objectType: ObjectType;
   objectId: string;
-  /** BOM 版本号。建议必须绑版本，否则换版之后旧建议会飘到新数据上。 */
+  /** BOM/设计版本号。建议必须绑版本，否则换版之后旧建议会飘到新数据上。 */
   version?: string;
   /** 指向字段级才能做 diff 预览。整对象级的建议无法被安全地一键接受。 */
   field?: string;
-  /** BOM 行位号，纯粹为了让用户能立刻定位 */
+  /** BOM 行位号或 LabSight 器件位号，纯粹为了让用户能立刻定位 */
   rowRef?: string;
 }
 
@@ -82,7 +92,7 @@ export interface Candidate<T> {
 export interface Suggestion<T = unknown> {
   id: string;
   agent: AgentId;
-  /** 规则码，如 R01 / A5.CREATE.FOOTPRINT。用户反馈时报这个码。 */
+  /** 规则码，如 R01 / A5.CREATE.FOOTPRINT / A6.ISSUE.DRAFT。用户反馈时报这个码。 */
   code: string;
   target: SuggestionTarget;
   severity: Severity;
