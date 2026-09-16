@@ -39,13 +39,14 @@ export interface LabSightCapability {
   label: string;
   available: boolean;
   phase?: string;
+  surface?: 'invoke' | 'workflow_api' | 'rtc';
 }
 
 export const LABSIGHT_AGENT_MANIFEST = {
   id: 'A6' as const,
   slug: 'labsight-debug',
   name: 'LabSight 调试 Agent',
-  version: '0.1.0',
+  version: '0.2.0',
   mountPoint: 'project/labsight',
   modes: ['live_debug', 'pcb_compare'] as const,
   context: [
@@ -59,18 +60,26 @@ export const LABSIGHT_AGENT_MANIFEST = {
     'diagnoses',
     'debug_steps',
     'activity_timeline',
+    'boards',
+    'debug_sessions',
+    'evidence',
+    'hypotheses',
   ] as const,
   capabilities: [
-    { id: 'chat', label: '工程上下文问答', available: true },
-    { id: 'measure_guide', label: '下一测量点建议', available: true },
-    { id: 'design_review', label: '设计审查', available: true },
-    { id: 'analyze_photo', label: 'PCB / 仪器照片分析', available: true },
-    { id: 'assembly_align', label: 'KiCad ↔ 实物 PCB 配准', available: true },
-    { id: 'assembly_inspect', label: 'Footprint 装配检查', available: true },
-    { id: 'analyze_capture', label: '波形 / 测量诊断', available: true },
-    { id: 'create_issue_draft', label: '生成 Issue 草稿', available: false, phase: 'P1' },
-    { id: 'create_eco_draft', label: '生成 ECO 草稿', available: false, phase: 'P1' },
-    { id: 'golden_board_compare', label: 'Golden Board 对比', available: false, phase: 'P2' },
+    { id: 'chat', label: '工程上下文问答', available: true, surface: 'invoke' },
+    { id: 'measure_guide', label: '下一测量点建议', available: true, surface: 'invoke' },
+    { id: 'design_review', label: '设计审查', available: true, surface: 'invoke' },
+    { id: 'analyze_photo', label: 'PCB / 仪器照片分析', available: true, surface: 'invoke' },
+    { id: 'assembly_align', label: 'KiCad ↔ 实物 PCB 配准', available: true, surface: 'invoke' },
+    { id: 'assembly_inspect', label: 'Footprint 装配检查', available: true, surface: 'invoke' },
+    { id: 'analyze_capture', label: '波形 / 测量诊断', available: true, surface: 'invoke' },
+    { id: 'debug_session', label: '项目级 Debug Session', available: true, phase: 'P1', surface: 'workflow_api' },
+    { id: 'evidence_binding', label: 'Evidence ↔ Ref/Net/Pin/TestStep', available: true, phase: 'P1', surface: 'workflow_api' },
+    { id: 'create_issue_draft', label: '生成 Issue 草稿', available: true, phase: 'P1', surface: 'workflow_api' },
+    { id: 'create_eco_draft', label: '生成 ECO 草稿', available: true, phase: 'P1', surface: 'workflow_api' },
+    { id: 'golden_board_compare', label: 'Golden Board 对比', available: true, phase: 'P2', surface: 'workflow_api' },
+    { id: 'next_best_test', label: 'Hypothesis → Next Best Test', available: true, phase: 'P3', surface: 'workflow_api' },
+    { id: 'rtc_a6_voice', label: '声网 RTC → A6 单一大脑', available: true, phase: 'P4', surface: 'rtc' },
   ] satisfies LabSightCapability[],
   policy: {
     writes: 'suggest_only' as const,
