@@ -1,7 +1,7 @@
 /**
  * ezplm-agents 对外入口。
  *
- * 宿主只需要认识两个东西：Suggestion 结构，以及下面这几个入口函数。
+ * 宿主只需要认识 Suggestion 结构、确定性 Agent 入口，以及 A6 LabSight 的调用契约。
  */
 
 export * from './core/types';
@@ -30,8 +30,25 @@ export type {
   PriceOffer, PriceDecision, CategoryTemplate, AttrSpec,
 } from './agents/a5-part-assistant';
 
+export {
+  LABSIGHT_AGENT_MANIFEST,
+  buildLabSightInvocation,
+  invokeLabSight,
+  buildIssueDraftSuggestion,
+  buildEcoDraftSuggestion,
+} from './agents/a6-labsight-debug';
+export type {
+  LabSightAction,
+  LabSightInvocation,
+  LabSightRuntimeResponse,
+  LabSightTransport,
+  LabSightCapability,
+  IssueDraft,
+  EcoDraft,
+} from './agents/a6-labsight-debug';
+
 export type { EzplmClient, EzplmConfig } from './adapters/ezplm/client';
 export { NoopEzplmClient, buildContext } from './adapters/ezplm/client';
 
 /** 版本号。建议把它跟着审计记录一起存，日后复盘能知道当时跑的是哪一版规则。 */
-export const AGENTS_VERSION = '0.1.0';
+export const AGENTS_VERSION = '0.2.0';
